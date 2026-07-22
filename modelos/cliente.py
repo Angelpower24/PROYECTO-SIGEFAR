@@ -2,18 +2,18 @@
 
 class Cliente:
     def __init__(self, nomb_cli, ape_cli, dni, telefono):
-        self.id = None
+        self.id_cliente = None
         self.nomb_cli = nomb_cli
         self.ape_cli = ape_cli
         self.dni = dni
         self.telefono = telefono
 
     def __str__(self):
-        return f"[{self.id}] {self.nomb_cli} | {self.ape_cli} | DNI: {self.dni} | Teléfono: {self.telefono}"
+        return f"[{self.id_cliente}] {self.nomb_cli} | {self.ape_cli} | DNI: {self.dni} | Teléfono: {self.telefono}"
         
     def to_dict(self):
         return {
-            "id": self.id,
+            "id_cliente": self.id_cliente,
             "nomb_cli": self.nomb_cli,
             "ape_cli": self.ape_cli,
             "dni": self.dni,
@@ -23,5 +23,5 @@ class Cliente:
     @classmethod
     def from_dict(cls,datos):
         c = cls(datos["nomb_cli"], datos["ape_cli"], datos["dni"], datos["telefono"])
-        c.id = datos["id"]
+        c.id_cliente = datos["id_cliente"]
         return c
