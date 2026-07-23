@@ -13,9 +13,7 @@ def inicializar():
     conn = obtener_conexion()
     cursor = conn.cursor()
 
-    # ==========================
     # TABLA CLIENTE
-    # ==========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS cliente(
             id_cliente INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,9 +24,7 @@ def inicializar():
         )
     """)
 
-    # ==========================
     # TABLA MEDICAMENTO
-    # ==========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS medicamento(
             id_medicamento INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,15 +34,15 @@ def inicializar():
         )
     """)
 
-    # ==========================
     # TABLA VENTA
-    # ==========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS venta(
             id_venta INTEGER PRIMARY KEY AUTOINCREMENT,
             fecha_venta TEXT NOT NULL,
             id_cliente INTEGER NOT NULL,
             id_medicamento INTEGER NOT NULL
+            cantidad INTEGER NOT NULL,
+            total REAL NOT NULL
         )
     """)
 
