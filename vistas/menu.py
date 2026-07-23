@@ -35,12 +35,12 @@ def mostrar_menu(cfg):
 def agregar_cliente(cdao):
     print("\n--- AGREGAR CLIENTE ---")
     nomb_cli = input("  Nombre    : ")
-    ape_cli = input("  Apellido  : ")
-    dni = input("  DNI       : ")
+    ape_cli  = input("  Apellido  : ")
+    dni      = input("  DNI       : ")
     telefono = input("  Telefono  : ")
     try:
         c = cdao.insertar(Cliente(nomb_cli, ape_cli, dni, telefono))
-        print(f" OK Cliente agregado con ID={c.id_cliente}")
+        print(f" OK Cliente agregado con ID = {c.id_cliente}")
     except DNIDuplicadoError as ex:
         print(f" ERROR: {ex}")
 
@@ -50,9 +50,9 @@ def agregar_medicamento(mdao):
     nomb_med = input("  Nombre : ")
     try:
         precio = float(input("  Precio : "))
-        stock = int(input("  Stock  : "))
+        stock  = int(input("  Stock  : "))
         m = mdao.insertar(Medicamento(nomb_med, precio, stock))
-        print(f" OK Medicamento agregado con ID={m.id_medicamento}")
+        print(f" OK Medicamento agregado con ID = {m.id_medicamento}")
     except ValueError:
         print(" ERROR: El precio y el stock deben ser números.") 
     
@@ -66,18 +66,33 @@ def registrar_venta(cdao, mdao, vdao):
     try:
         cliente_id = int(input("  ID del cliente      : "))
         medicamento_id = int(input("  ID del medicamento  : "))
+        cantidad = int(input("  Cantidad            : "))
+        
         c = cdao.buscar_por_id(cliente_id)
         m = mdao.buscar(medicamento_id)
+        
         if not c:
             print(f" ERROR: Cliente ID={cliente_id} no existe.")
             return
         if not m:
             print(f" ERROR: Medicamento ID={medicamento_id} no existe.")
             return
-        v = vdao.registrar(Venta(cliente_id, medicamento_id))
+        
+        if cantidad <= 0:
+            print(" ERROR: La cantidad debe ser mayor que cero.")
+            return
+
+        if cantidad > m.stock:
+            print(f" ERROR: Stock insuficiente. Stock disponible: {m.stock}")
+            return
+        
+        total = round(m.precio * cantidad, 2)
+        
+        v = vdao.registrar(Venta(cliente_id, medicamento_id, cantidad, total))
         print(f" OK Venta registrada con ID={v.id_venta}")
+        print(f" Total de la venta: s/. {total:.2f}")
     except ValueError:
-        print(" ERROR: Los IDs deben ser números enteros.")
+        print(" ERROR: Los datos ingresados son inválidos.")
 
 # LISTARTODO CLIENTE 
 
@@ -103,20 +118,20 @@ def listar_todomedicamento(mdao):
 # LISTAR VENTAS    
 def listar_ventas(vdao):
     print("\n--- VENTAS ---")
-    ventas = vdao.obtener_todos()
-    if ventas:
-        for v in ventas:
-            print(f" {v}")
+    filas = vdao.obtener_todos()
+    if filas:
+        for f in filas:
+            print(f"[{f['id_venta']}] {f['nomb_cli']} | compró: {f['nomb_med']} | Cantidad: {f['cantidad']} | Total: S/. {f['total']:.2f} | Fecha: {f['fecha_venta']}")
     else:
-        print(" (No hay ventas registradas.)")
-        
+        print(" (No hay ventas registradas)")
+                      
 # ELIMINAR CLIENTE
 def eliminar_cliente(cdao):
     print("\n--- ELIMINAR CLIENTE ---")
     try:
         cliente_id = int(input("  ID del cliente a eliminar: "))
         cdao.eliminar(cliente_id)
-        print(f" OK Cliente con ID={cliente_id} eliminado.")
+        print(f" OK Cliente con ID = {cliente_id} eliminado.")
     except ClienteNoEncontradoError as ex:
         print(f" ERROR: {ex}")
     except ValueError:
@@ -128,7 +143,7 @@ def eliminar_medicamento(mdao):
     try:
         medicamento_id = int(input("  ID del medicamento a eliminar: "))
         mdao.eliminar(medicamento_id)
-        print(f" OK Medicamento ID={medicamento_id} eliminado.")
+        print(f" OK Medicamento ID = {medicamento_id} eliminado.")
     except MedicamentoNoEncontradoError as ex:
         print(f" ERROR: {ex}")
     except ValueError:
@@ -141,7 +156,7 @@ def actualizar_cliente(cdao):
     try:
         cliente_id = int(input("  ID del cliente a actualizar: "))
         nomb_cli = input("  Nuevo Nombre     (Enter para no cambiar): ").strip()
-        ape_cli = input("  Nuevo Apellido   (Enter para no cambiar): ").strip()
+        ape_cli  = input("  Nuevo Apellido   (Enter para no cambiar): ").strip()
         telefono = input("  Nuevo Telefono   (Enter para no cambiar): ").strip()
         c = cdao.actualizar(cliente_id, nomb_cli or None, ape_cli or None, telefono or None)
         print(f" OK Cliente actualizado: {c}")
@@ -156,9 +171,9 @@ def actualizar_medicamento(mdao):
 
     try:
         medicamento_id = int(input("  ID del medicamento a actualizar: "))
-        nomb_med = input("  Nuevo Nombre (Enter para no cambiar): ").strip()
+        nomb_med   = input("  Nuevo Nombre (Enter para no cambiar): ").strip()
         precio_str = input("  Nuevo Precio (Enter para no cambiar): ").strip()
-        stock_str = input("  Nuevo Stock (Enter para no cambiar): ").strip()
+        stock_str  = input("  Nuevo Stock  (Enter para no cambiar): ").strip()
         precio = float(precio_str) if precio_str else None
         stock = int(stock_str) if stock_str else None
         m = mdao.actualizar(medicamento_id, nomb_med or None, precio,stock)
@@ -178,7 +193,7 @@ def ventas_por_cliente(cdao, vdao):
         filas = vdao.buscar_por_cliente(cliente_id)
         if filas:
             for f in filas:
-                print(f" [{f['id_venta']}] {f['nomb_med']} | {f['fecha_venta']}")
+                print(f" [{f['id_venta']}] Medicamento: {f['nomb_med']} | Cantidad: {f['cantidad']} | Total: {f['total']:.2f} | Fecha: {f['fecha_venta']} ")
         else:
             print(" (Este cliente no tiene ventas registradas)")
     except ValueError:
@@ -209,8 +224,8 @@ def ver_ventas_json(vdao):
     print("\n--- VENTAS EN JSON ---")
     ventas = vdao.obtener_todos()
     if ventas:
-        datos = [v.to_dict() for v in ventas]
+        datos = [dict(v) for v in ventas]
+        #datos = [v.to_dict() for v in ventas]
         print(json.dumps(datos, indent=4, ensure_ascii=False))
     else:
         print("  (No hay ventas registradas)")
-          
