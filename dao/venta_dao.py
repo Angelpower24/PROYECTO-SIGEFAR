@@ -15,25 +15,26 @@ class VentaDAO:
 
     # REGISTRAR
     def registrar(self, venta):
-
+        
         venta.fecha_venta = datetime.now().strftime("%Y-%m-%d")
+        venta.total = round(venta.total, 2)
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("""INSERT INTO venta (fecha_venta, id_cliente, id_medicamento) VALUES (?, ?, ?)""",
-            (venta.fecha_venta, venta.id_cliente, venta.id_medicamento)
-        )
+        cursor.execute("""INSERT INTO venta (fecha_venta, id_cliente, id_medicamento, cantidad, total) VALUES (?, ?, ?, ?, ?)""",
+            (venta.fecha_venta, venta.id_cliente, venta.id_medicamento, venta.cantidad, venta.total))
+        cursor.execute("""UPDATE medicamento SET stock = stock - ? WHERE id_medicamento = ? """,
+           (venta.cantidad, venta.id_medicamento))
         conn.commit()
         venta.id_venta = cursor.lastrowid
         conn.close()
         self.__log.info(f"Venta registrada: ID={venta.id_venta}")
         return venta
-
-    # OBTENER TODOS
+    
     def obtener_todos(self):
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT v.id_venta, v.fecha_venta, v.id_cliente, v.id_medicamento, c.nomb_cli, c.ape_cli, m.nomb_med
+        cursor.execute(""" 
+            SELECT v.id_venta, v.fecha_venta, c.nomb_cli, c.ape_cli, m.nomb_med, v.cantidad, v.total
             FROM venta v
             JOIN cliente c ON v.id_cliente = c.id_cliente
             JOIN medicamento m ON v.id_medicamento = m.id_medicamento
@@ -41,15 +42,14 @@ class VentaDAO:
         """)
         filas = cursor.fetchall()
         conn.close()
-        
-        return [self.__fila_a_venta(f) for f in filas]
-
+        return filas
+    
     # BUSCAR POR CLIENTE
     def buscar_por_cliente(self, id_cliente):
         conn = obtener_conexion()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT v.id_venta, v.fecha_venta, c.nomb_cli, c.ape_cli, m.nomb_med
+            SELECT v.id_venta, v.fecha_venta, c.nomb_cli, c.ape_cli, m.nomb_med, v.cantidad, v.total
             FROM venta v
             JOIN cliente c ON v.id_cliente = c.id_cliente
             JOIN medicamento m ON v.id_medicamento = m.id_medicamento
@@ -59,7 +59,7 @@ class VentaDAO:
         filas = cursor.fetchall()
         conn.close()
         return filas
-
+   
     # TOTAL
     def total(self):
         conn = obtener_conexion()
@@ -68,16 +68,3 @@ class VentaDAO:
         total = cursor.fetchone()[0]
         conn.close()
         return total
-    
-    # FILA A VENTA
-    def __fila_a_venta(self, fila):
-        v = Venta(
-            fila["id_cliente"],
-            fila["id_medicamento"]
-        )
-        v.id_venta = fila["id_venta"]
-        v.fecha_venta = fila["fecha_venta"]
-        return v
-    
-
-    
