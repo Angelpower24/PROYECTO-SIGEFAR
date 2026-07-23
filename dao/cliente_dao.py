@@ -1,83 +1,136 @@
 from config.logger import Logger
+from config.base_datos import obtener_conexion
+import sqlite3
+from modelos.cliente import Cliente
 
-# EXCEPCIONES PERSONALIZADAS
-
+# EXCEPCIONES
 class ClienteNoEncontradoError(Exception):
     def __init__(self, cliente_id):
         super().__init__(f"Cliente ID={cliente_id} no encontrado")
 
 class DNIDuplicadoError(Exception):
     def __init__(self, dni):
-        super().__init__(f"El DNI {dni} ya existe")
+        super().__init__(f"DNI '{dni}' ya registrado")
 
+class ClienteConVentasError(Exception):
+    def __init__(self, cliente_id):
+        super().__init__(f"Cliente ID={cliente_id} no se puede eliminar: tiene ventas asociadas")
 
-# DAO CLIENTE
-
+#  CLASE CLIENTE DAO
 class ClienteDAO:
     def __init__(self):
-        self.__bd = []
-        self.__cid = 1
         self.__log = Logger()
-
-    # Insertar cliente
-
+        
+    # INSERTAR
     def insertar(self, cliente):
         if self.buscar_por_dni(cliente.dni):
             self.__log.warning(f"DNI duplicado: {cliente.dni}")
             raise DNIDuplicadoError(cliente.dni)
-        cliente.id = self.__cid
-        self.__cid += 1
-        self.__bd.append(cliente)
-        self.__log.info(
-            f"Cliente agregado: {cliente.nomb_cli} {cliente.ape_cli}")
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "INSERT INTO cliente (nomb_cli, ape_cli, dni, telefono) VALUES (?, ?, ?, ?)",
+            (cliente.nomb_cli, cliente.ape_cli, cliente.dni, cliente.telefono)
+        )
+        conn.commit()
+        cliente.id_cliente = cursor.lastrowid
+        conn.close()
+
+        self.__log.info(f"Cliente agregado: {cliente.nomb_cli} (ID={cliente.id_cliente})")
+
         return cliente
-
-    # Buscar por DNI
     
+    # BUSCAR POR DNI
     def buscar_por_dni(self, dni):
-        for c in self.__bd:
-            if c.dni == dni:
-                return c
-        return None
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM cliente WHERE dni = ?", (dni,))
+        fila = cursor.fetchone()
+        conn.close()
+        return self.__fila_a_cliente(fila) if fila else None
 
-    # Buscar por ID
-
+    # BUSCAR POR ID
     def buscar_por_id(self, cliente_id):
-        for c in self.__bd:
-            if c.id == cliente_id:
-                return c
-        return None
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM cliente WHERE id_cliente = ?", (cliente_id,))
+        fila = cursor.fetchone()
+        conn.close()
+        return self.__fila_a_cliente(fila) if fila else None
 
-    # Listar clientes
-
+    # OBTENER TODOS
     def obtener_todos(self):
-        return sorted(self.__bd, key=lambda c: c.nomb_cli)
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM cliente ORDER BY nomb_cli")
+        filas = cursor.fetchall()
+        conn.close()
+        return [self.__fila_a_cliente(f) for f in filas]
 
-    # Actualizar cliente
-
-    def actualizar(self,cliente_id,nomb_cli=None,ape_cli=None,telefono=None):
+    # ACTUALIZAR
+    def actualizar(self, cliente_id, nomb_cli=None, ape_cli=None, telefono=None):
         c = self.buscar_por_id(cliente_id)
         if not c:
-            self.__log.error(f"Cliente ID={cliente_id} no encontrado")
+            self.__log.error(f"Actualizar fallido: Cliente ID={cliente_id} no existe")
             raise ClienteNoEncontradoError(cliente_id)
-        if nomb_cli: c.nomb_cli = nomb_cli
-        if ape_cli:  c.ape_cli  = ape_cli
-        if telefono: c.telefono = telefono
-        self.__log.info(f"Cliente actualizado ID={cliente_id}")
+
+        nuevo_nombre = nomb_cli if nomb_cli is not None else c.nomb_cli
+        nuevo_apellido = ape_cli if ape_cli is not None else c.ape_cli
+        nuevo_telefono = telefono if telefono is not None else c.telefono
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE cliente SET nomb_cli=?, ape_cli=?, telefono=? WHERE id_cliente=?",
+            (nuevo_nombre, nuevo_apellido, nuevo_telefono, cliente_id)
+        )
+
+        conn.commit()
+        conn.close()
+        c.nomb_cli = nuevo_nombre
+        c.ape_cli = nuevo_apellido
+        c.telefono = nuevo_telefono
+        
+        self.__log.info(f"Cliente actualizado: {c.nomb_cli} (ID={cliente_id})")
+        
         return c
 
-    # Eliminar cliente
-
+    # ELIMINAR
     def eliminar(self, cliente_id):
         c = self.buscar_por_id(cliente_id)
         if not c:
-            self.__log.error(f"Cliente ID={cliente_id} no encontrado")
+            self.__log.error(f"Eliminar fallido: Cliente ID={cliente_id} no existe")
             raise ClienteNoEncontradoError(cliente_id)
-        self.__bd.remove(c)
-        self.__log.info(
-            f"Cliente eliminado ID={cliente_id}")
-        return True
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("DELETE FROM cliente WHERE id_cliente = ?", (cliente_id,))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            self.__log.warning(f"Eliminar fallido: Cliente ID={cliente_id} tiene ventas asociadas")
+            raise ClienteConVentasError(cliente_id)
+        conn.close()
+        
+        self.__log.info(f"Cliente eliminado: {c.nomb_cli} (ID={cliente_id})")
 
-    # Total de clientes
+    # TOTAL
+    def total(self):
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM cliente")
+        total = cursor.fetchone()[0]
+        conn.close()
+        return total
 
-    def total(self): return len(self.__bd)
+    # FILA A CLIENTE
+    def __fila_a_cliente(self, fila):
+        c = Cliente(
+            fila["nomb_cli"],
+            fila["ape_cli"],
+            fila["dni"],
+            fila["telefono"]
+        )
+        c.id_cliente = fila["id_cliente"]
+        return c
