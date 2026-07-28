@@ -1,66 +1,32 @@
-from config.logger import Logger
-from config.sistema_config import SistemaConfig
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from config.base_datos import inicializar
-from dao.cliente_dao import ClienteDAO
-from dao.medicamento_dao import MedicamentoDAO
-from dao.venta_dao import VentaDAO
+from routers import clientes, medicamentos, ventas
 
-from vistas.menu import (
-    mostrar_menu,
-    agregar_cliente,
-    agregar_medicamento,
-    listar_todocliente,
-    listar_todomedicamento,
-    eliminar_cliente,
-    eliminar_medicamento,
-    actualizar_cliente,
-    actualizar_medicamento,
-    registrar_venta,
-    listar_ventas,
-    ventas_por_cliente,
-    ver_clientes_json,
-    ver_medicamentos_json,
-    ver_ventas_json
+app = FastAPI(
+    title="Sistema Integral de Gestión de Farmacia (SIGEFAR)",
+    version="1.0",
+    description="Mi API REST para gestión de clientes, medicamentos y ventas",
 )
 
-# PROGRAMA PRINCIPAL
-def main():
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    inicializar()
+inicializar()
 
-    cfg = SistemaConfig()
-    cdao = ClienteDAO()
-    mdao = MedicamentoDAO()
-    vdao = VentaDAO()
-
-    while True:
-        mostrar_menu(cfg)
-        opcion = input("  Elige una opción: ").strip()
-
-        match opcion:
-            
-            case "1": agregar_cliente(cdao)
-            case "2": agregar_medicamento(mdao)
-            case "3": registrar_venta(cdao, mdao, vdao)
-            case "4": listar_todocliente(cdao)
-            case "5": listar_todomedicamento(mdao)
-            case "6": listar_ventas(vdao)
-            case "7": eliminar_cliente(cdao)
-            case "8": eliminar_medicamento(mdao)
-            case "9": actualizar_cliente(cdao)
-            case "10": actualizar_medicamento(mdao)
-            case "11": ventas_por_cliente(cdao, vdao)
-            case "12": ver_clientes_json(cdao)
-            case "13": ver_medicamentos_json(mdao)
-            case "14": ver_ventas_json(vdao)
-            case "15": Logger().mostrar_logs()
-            case "16": Logger().limpiar()
-            case "0":
-                Logger().info("Sistema cerrado por el usuario")
-                print("\nHasta luego.")
-                break
-            case _:
-                print("Opción no válida.")
+app.include_router(clientes.router)
+app.include_router(medicamentos.router)
+app.include_router(ventas.router)
 
 
-main()
+@app.get("/")
+def inicio():
+    return {
+        "mensaje": "API Sistema Integral de Gestión de Farmacia (SIGEFAR)",
+        "version": "1.0",
+        "docs": "/docs"
+    }
