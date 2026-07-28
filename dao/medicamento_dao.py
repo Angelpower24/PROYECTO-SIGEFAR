@@ -1,6 +1,6 @@
+import psycopg2
 from config.logger import Logger
 from config.base_datos import obtener_conexion
-import sqlite3
 from modelos.medicamento import Medicamento
 
 # EXCEPCIONES
@@ -21,11 +21,11 @@ class MedicamentoDAO:
     def insertar(self, m):
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO medicamento (nomb_med, precio, stock) VALUES (?, ?, ?)",
+        cursor.execute("INSERT INTO medicamento (nomb_med, precio, stock) VALUES (%s, %s, %s) RETURNING id_medicamento",
         (m.nomb_med, m.precio, m.stock)
         )
+        m.id_medicamento = cursor.fetchone()["id_medicamento"]
         conn.commit()
-        m.id_medicamento = cursor.lastrowid
         conn.close()
 
         self.__log.info(f"Medicamento agregado: {m.nomb_med} S/.{m.precio:.2f} (ID={m.id_medicamento})")
@@ -45,7 +45,7 @@ class MedicamentoDAO:
     def buscar(self, med_id):
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM medicamento WHERE id_medicamento = ?",(med_id,))
+        cursor.execute("SELECT * FROM medicamento WHERE id_medicamento = %s",(med_id,))
         fila = cursor.fetchone()
         conn.close()
         return self.__fila_a_medicamento(fila) if fila else None
@@ -64,7 +64,7 @@ class MedicamentoDAO:
         
         cursor.execute(
             """
-            UPDATE medicamento SET nomb_med=?, precio=?, stock=? WHERE id_medicamento=?
+            UPDATE medicamento SET nomb_med=%s, precio=%s, stock=%s WHERE id_medicamento=%s
             """,
             (nuevo_nombre, nuevo_precio, nuevo_stock, med_id)
         )
@@ -87,13 +87,12 @@ class MedicamentoDAO:
         conn = obtener_conexion()
         cursor = conn.cursor()
         try:
-            cursor.execute("DELETE FROM medicamento WHERE id_medicamento = ?",(med_id,))
+            cursor.execute("DELETE FROM medicamento WHERE id_medicamento = %s",(med_id,))
             conn.commit()
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
             conn.close()
             self.__log.warning(f"Eliminar fallido: Medicamento ID={med_id} tiene ventas asociadas")
             raise MedicamentoConVentasError(med_id)
-        conn.close()
         self.__log.info(f"Medicamento eliminado: {m.nomb_med} (ID={med_id})")
         return True
 
@@ -101,8 +100,8 @@ class MedicamentoDAO:
     def total(self):
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM medicamento")
-        total = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) AS total FROM medicamento")
+        total = cursor.fetchone()["total"]
         conn.close()
         return total
 
