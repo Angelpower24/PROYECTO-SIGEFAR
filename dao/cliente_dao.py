@@ -1,6 +1,6 @@
+import psycopg2
 from config.logger import Logger
 from config.base_datos import obtener_conexion
-import sqlite3
 from modelos.cliente import Cliente
 
 # EXCEPCIONES
@@ -31,7 +31,7 @@ class ClienteDAO:
         cursor = conn.cursor()
 
         cursor.execute(
-            "INSERT INTO cliente (nomb_cli, ape_cli, dni, telefono) VALUES (?, ?, ?, ?)",
+            "INSERT INTO cliente (nomb_cli, ape_cli, dni, telefono) VALUES (%s, %s, %s, %s)",
             (cliente.nomb_cli, cliente.ape_cli, cliente.dni, cliente.telefono)
         )
         conn.commit()
@@ -46,7 +46,7 @@ class ClienteDAO:
     def buscar_por_dni(self, dni):
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM cliente WHERE dni = ?", (dni,))
+        cursor.execute("SELECT * FROM cliente WHERE dni = %s", (dni,))
         fila = cursor.fetchone()
         conn.close()
         return self.__fila_a_cliente(fila) if fila else None
@@ -55,7 +55,7 @@ class ClienteDAO:
     def buscar_por_id(self, cliente_id):
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM cliente WHERE id_cliente = ?", (cliente_id,))
+        cursor.execute("SELECT * FROM cliente WHERE id_cliente = %s", (cliente_id,))
         fila = cursor.fetchone()
         conn.close()
         return self.__fila_a_cliente(fila) if fila else None
@@ -82,7 +82,7 @@ class ClienteDAO:
         conn = obtener_conexion()
         cursor = conn.cursor()
         cursor.execute(
-            "UPDATE cliente SET nomb_cli=?, ape_cli=?, telefono=? WHERE id_cliente=?",
+            "UPDATE cliente SET nomb_cli=%s, ape_cli=%s, telefono=%s WHERE id_cliente=%s",
             (nuevo_nombre, nuevo_apellido, nuevo_telefono, cliente_id)
         )
 
@@ -105,9 +105,10 @@ class ClienteDAO:
         conn = obtener_conexion()
         cursor = conn.cursor()
         try:
-            cursor.execute("DELETE FROM cliente WHERE id_cliente = ?", (cliente_id,))
+            cursor.execute("DELETE FROM cliente WHERE id_cliente = %s", (cliente_id,))
             conn.commit()
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
+            conn.rollback()
             conn.close()
             self.__log.warning(f"Eliminar fallido: Cliente ID={cliente_id} tiene ventas asociadas")
             raise ClienteConVentasError(cliente_id)
@@ -119,8 +120,8 @@ class ClienteDAO:
     def total(self):
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM cliente")
-        total = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) AS total FROM cliente")
+        total = cursor.fetchone()["total"]
         conn.close()
         return total
 
