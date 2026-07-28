@@ -1,11 +1,17 @@
-import sqlite3
-
-ARCHIVO_BD = "farmacia.db"
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 def obtener_conexion():
-    conn = sqlite3.connect(ARCHIVO_BD)
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        port=os.getenv("DB_PORT", "5432"),
+        database=os.getenv("DB_NAME", "db_farmacia"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", ""),
+    )
+    
+    conn.cursor_factory = RealDictCursor
     return conn
 
 def inicializar():
@@ -16,20 +22,20 @@ def inicializar():
     # TABLA CLIENTE
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS cliente(
-            id_cliente INTEGER PRIMARY KEY AUTOINCREMENT,
-            nomb_cli TEXT NOT NULL,
-            ape_cli TEXT NOT NULL,
-            dni TEXT UNIQUE NOT NULL,
-            telefono TEXT
+            id_cliente SERIAL PRIMARY KEY,
+            nomb_cli   TEXT NOT NULL,
+            ape_cli    TEXT NOT NULL,
+            dni        TEXT UNIQUE NOT NULL,
+            telefono   TEXT
         )
     """)
 
     # TABLA MEDICAMENTO
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS medicamento(
-            id_medicamento INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_medicamento SERIAL PRIMARY KEY,
             nomb_med TEXT NOT NULL,
-            precio REAL NOT NULL,
+            precio NUMERIC(10,2) NOT NULL,
             stock INTEGER NOT NULL
         )
     """)
@@ -37,12 +43,14 @@ def inicializar():
     # TABLA VENTA
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS venta(
-            id_venta INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_venta SERIAL PRIMARY KEY,
             fecha_venta TEXT NOT NULL,
             id_cliente INTEGER NOT NULL,
-            id_medicamento INTEGER NOT NULL
+            id_medicamento INTEGER NOT NULL,
             cantidad INTEGER NOT NULL,
-            total REAL NOT NULL
+            total NUMERIC(10,2) NOT NULL,   
+            FOREIGN KEY (id_cliente)REFERENCES cliente(id_cliente),
+            FOREIGN KEY (id_medicamento)REFERENCES medicamento(id_medicamento)
         )
     """)
 
