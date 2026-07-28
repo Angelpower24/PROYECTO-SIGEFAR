@@ -1,7 +1,7 @@
+import psycopg2
 from config.logger import Logger
 from datetime import datetime
 from config.base_datos import obtener_conexion
-from modelos.venta import Venta
 
 # EXCEPCIONES
 class VentaNoEncontradaError(Exception):
@@ -20,21 +20,23 @@ class VentaDAO:
         venta.total = round(venta.total, 2)
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("""INSERT INTO venta (fecha_venta, id_cliente, id_medicamento, cantidad, total) VALUES (?, ?, ?, ?, ?)""",
+        cursor.execute("""INSERT INTO venta (fecha_venta, id_cliente, id_medicamento, cantidad, total) VALUES (%s, %s, %s, %s, %s) RETURNING id_venta""",
             (venta.fecha_venta, venta.id_cliente, venta.id_medicamento, venta.cantidad, venta.total))
-        cursor.execute("""UPDATE medicamento SET stock = stock - ? WHERE id_medicamento = ? """,
+        cursor.execute("""UPDATE medicamento SET stock = stock - %s WHERE id_medicamento = %s """,
            (venta.cantidad, venta.id_medicamento))
+        venta.id_venta = cursor.fetchone()["id_venta"]
         conn.commit()
-        venta.id_venta = cursor.lastrowid
         conn.close()
         self.__log.info(f"Venta registrada: ID={venta.id_venta}")
         return venta
     
+    # OBTENER TODOS
     def obtener_todos(self):
         conn = obtener_conexion()
         cursor = conn.cursor()
         cursor.execute(""" 
             SELECT v.id_venta, v.fecha_venta, c.nomb_cli, c.ape_cli, m.nomb_med, v.cantidad, v.total
+            v.id_cliente, v.id_medicamento
             FROM venta v
             JOIN cliente c ON v.id_cliente = c.id_cliente
             JOIN medicamento m ON v.id_medicamento = m.id_medicamento
@@ -50,10 +52,11 @@ class VentaDAO:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT v.id_venta, v.fecha_venta, c.nomb_cli, c.ape_cli, m.nomb_med, v.cantidad, v.total
+            v.id_cliente, v.id_medicamento
             FROM venta v
             JOIN cliente c ON v.id_cliente = c.id_cliente
             JOIN medicamento m ON v.id_medicamento = m.id_medicamento
-            WHERE v.id_cliente = ?
+            WHERE v.id_cliente = %s
             ORDER BY v.fecha_venta DESC
         """, (id_cliente,))
         filas = cursor.fetchall()
@@ -64,7 +67,7 @@ class VentaDAO:
     def total(self):
         conn = obtener_conexion()
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM venta")
-        total = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) AS total FROM venta")
+        total = cursor.fetchone()["total"]
         conn.close()
         return total
