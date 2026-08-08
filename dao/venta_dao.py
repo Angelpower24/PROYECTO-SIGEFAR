@@ -35,7 +35,7 @@ class VentaDAO:
         conn = obtener_conexion()
         cursor = conn.cursor()
         cursor.execute(""" 
-            SELECT v.id_venta, v.fecha_venta, c.nomb_cli, c.ape_cli, m.nomb_med, v.cantidad, v.total
+            SELECT v.id_venta, v.fecha_venta, c.nomb_cli, c.ape_cli, m.nomb_med, v.cantidad, v.total,
             v.id_cliente, v.id_medicamento
             FROM venta v
             JOIN cliente c ON v.id_cliente = c.id_cliente
@@ -51,7 +51,7 @@ class VentaDAO:
         conn = obtener_conexion()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT v.id_venta, v.fecha_venta, c.nomb_cli, c.ape_cli, m.nomb_med, v.cantidad, v.total
+            SELECT v.id_venta, v.fecha_venta, c.nomb_cli, c.ape_cli, m.nomb_med, v.cantidad, v.total,
             v.id_cliente, v.id_medicamento
             FROM venta v
             JOIN cliente c ON v.id_cliente = c.id_cliente
