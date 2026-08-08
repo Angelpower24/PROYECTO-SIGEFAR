@@ -22,9 +22,9 @@ class VentaDAO:
         cursor = conn.cursor()
         cursor.execute("""INSERT INTO venta (fecha_venta, id_cliente, id_medicamento, cantidad, total) VALUES (%s, %s, %s, %s, %s) RETURNING id_venta""",
             (venta.fecha_venta, venta.id_cliente, venta.id_medicamento, venta.cantidad, venta.total))
-        cursor.execute("""UPDATE medicamento SET stock = stock - %s WHERE id_medicamento = %s """,
-           (venta.cantidad, venta.id_medicamento))
         venta.id_venta = cursor.fetchone()["id_venta"]
+        cursor.execute("""UPDATE medicamento SET stock = stock - %s WHERE id_medicamento = %s AND stock >= %s""",
+           (venta.cantidad, venta.id_medicamento, venta.cantidad))
         conn.commit()
         conn.close()
         self.__log.info(f"Venta registrada: ID={venta.id_venta}")

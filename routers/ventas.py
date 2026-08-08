@@ -15,6 +15,54 @@ mdao = MedicamentoDAO()
 def listar_ventas():
     return vdao.obtener_todos()
 
+@router.post("/", response_model=VentaRespuesta)
+def registrar_venta(datos: VentaCrear):
+
+    # VERIFICAR CLIENTE
+    cliente = cdao.buscar_por_id(datos.id_cliente)
+
+    if not cliente:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Cliente ID={datos.id_cliente} no encontrado"
+        )
+
+    # VERIFICAR MEDICAMENTO
+    medicamento = mdao.buscar(datos.id_medicamento)
+
+    if not medicamento:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Medicamento ID={datos.id_medicamento} no encontrado"
+        )
+
+    # VERIFICAR STOCK
+    if datos.cantidad > medicamento.stock:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Stock insuficiente. Stock disponible: {medicamento.stock}"
+        )
+
+    # CALCULAR TOTAL
+    total = round(
+        medicamento.precio * datos.cantidad,
+        2
+    )
+
+    # CREAR OBJETO VENTA
+    venta = Venta(
+        datos.id_cliente,
+        datos.id_medicamento,
+        datos.cantidad,
+        total
+    )
+
+    # REGISTRAR UTILIZANDO TU DAO EXISTENTE
+    vdao.registrar(venta)
+
+    # OBTENER LA VENTA COMPLETA
+    return vdao.buscar_por_id(venta.id_venta)
+
 @router.get("/{venta_id}", response_model=VentaRespuesta)
 def obtener_venta(venta_id: int):
     v = vdao.buscar_por_id(venta_id)
