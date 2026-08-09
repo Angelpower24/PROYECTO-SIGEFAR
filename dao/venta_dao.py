@@ -46,6 +46,29 @@ class VentaDAO:
         conn.close()
         return filas
     
+      #BUSCAR POR ID
+    def buscar_por_id(self, venta_id):
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT v.id_venta, v.id_cliente, v.id_medicamento, c.nomb_cli, c.ape_cli, m.nomb_med,v.cantidad,
+            v.fecha_venta, v.total
+            FROM venta v
+            JOIN cliente c
+                ON v.id_cliente = c.id_cliente
+            JOIN medicamento m
+                ON v.id_medicamento = m.id_medicamento
+            WHERE v.id_venta = %s
+        """, (venta_id,))
+
+        fila = cursor.fetchone()
+
+        conn.close()
+
+        return fila
+    
     # BUSCAR POR CLIENTE
     def buscar_por_cliente(self, id_cliente):
         conn = obtener_conexion()

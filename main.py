@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config.base_datos import inicializar
-from routers import clientes, medicamentos, ventas
+from routers import clientes, medicamentos, ventas, registros
 
 app = FastAPI(
     title="Sistema Integral de Gestión de Farmacia (SIGEFAR)",
@@ -21,6 +21,7 @@ inicializar()
 app.include_router(clientes.router)
 app.include_router(medicamentos.router)
 app.include_router(ventas.router)
+app.include_router(registros.router)
 
 
 @app.get("/")
