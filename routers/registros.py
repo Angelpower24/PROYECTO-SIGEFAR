@@ -66,3 +66,13 @@ def obtener_registros():
         })
 
     return registros
+
+# ELIMINAR HISTORIAL
+@router.delete("/")
+def eliminar_historial():
+
+    logger.limpiar()
+
+    return {
+        "mensaje": "Historial eliminado correctamente"
+    }
