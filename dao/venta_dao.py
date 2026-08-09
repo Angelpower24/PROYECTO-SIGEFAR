@@ -27,7 +27,16 @@ class VentaDAO:
            (venta.cantidad, venta.id_medicamento, venta.cantidad))
         conn.commit()
         conn.close()
-        self.__log.info(f"Venta registrada: ID={venta.id_venta}")
+        
+        self.__log.info(
+                        f"Venta registrada: "
+                        f"ID={venta.id_venta} | "
+                        f"Cliente ID={venta.id_cliente} | "
+                        f"Medicamento ID={venta.id_medicamento} | "
+                        f"Cantidad: {venta.cantidad} | "
+                        f"Total: S/.{venta.total:.2f}"
+                    )
+        
         return venta
     
     # OBTENER TODOS

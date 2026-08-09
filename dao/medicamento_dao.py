@@ -28,7 +28,14 @@ class MedicamentoDAO:
         conn.commit()
         conn.close()
 
-        self.__log.info(f"Medicamento agregado: {m.nomb_med} S/.{m.precio:.2f} (ID={m.id_medicamento})")
+        self.__log.info(
+                        f"Medicamento agregado: "
+                        f"ID={m.id_medicamento}  | "
+                        f"{m.nomb_med} | "
+                        f"Precio: S/.{m.precio:.2f} | "
+                        f"Stock: {m.stock}"
+                    )
+        
         return m
 
     # OBTENER TODOS
@@ -75,7 +82,14 @@ class MedicamentoDAO:
         m.precio = nuevo_precio
         m.stock = nuevo_stock
 
-        self.__log.info(f"Medicamento actualizado: (ID={med_id})")
+        self.__log.info(
+                        f"Medicamento actualizado: "
+                        f"ID={med_id} | "
+                        f"{m.nomb_med} | "
+                        f"Precio: S/.{m.precio:.2f} | "
+                        f"Stock: {m.stock}"
+                    )
+        
         return m
 
     # ELIMINAR
@@ -93,7 +107,15 @@ class MedicamentoDAO:
             conn.close()
             self.__log.warning(f"Eliminar fallido: Medicamento ID={med_id} tiene ventas asociadas")
             raise MedicamentoConVentasError(med_id)
-        self.__log.info(f"Medicamento eliminado: {m.nomb_med} (ID={med_id})")
+        
+        self.__log.info(
+                        f"Medicamento eliminado: "
+                        f"ID={med_id} | "
+                        f"{m.nomb_med} | "
+                        f"Precio: S/.{m.precio:.2f} | "
+                        f"Stock: {m.stock}"
+                    )
+        
         return True
 
     # TOTAL
