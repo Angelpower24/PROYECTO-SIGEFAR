@@ -30,8 +30,8 @@ class MedicamentoDAO:
 
         self.__log.info(
                         f"Medicamento agregado: "
-                        f"ID={m.id_medicamento}  | "
-                        f"{m.nomb_med} | "
+                        f"ID: {m.id_medicamento}  | "
+                        f"Nombre: {m.nomb_med} | "
                         f"Precio: S/.{m.precio:.2f} | "
                         f"Stock: {m.stock}"
                     )
@@ -84,8 +84,8 @@ class MedicamentoDAO:
 
         self.__log.info(
                         f"Medicamento actualizado: "
-                        f"ID={med_id} | "
-                        f"{m.nomb_med} | "
+                        f"ID: {med_id} | "
+                        f"Nombre: {m.nomb_med} | "
                         f"Precio: S/.{m.precio:.2f} | "
                         f"Stock: {m.stock}"
                     )
@@ -110,8 +110,8 @@ class MedicamentoDAO:
         
         self.__log.info(
                         f"Medicamento eliminado: "
-                        f"ID={med_id} | "
-                        f"{m.nomb_med} | "
+                        f"ID: {med_id} | "
+                        f"Nombre: {m.nomb_med} | "
                         f"Precio: S/.{m.precio:.2f} | "
                         f"Stock: {m.stock}"
                     )

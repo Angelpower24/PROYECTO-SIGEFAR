@@ -40,8 +40,8 @@ class ClienteDAO:
 
         self.__log.info(
                         f"Cliente agregado: "
-                        f"ID={cliente.id_cliente} | "
-                        f"{cliente.nomb_cli} {cliente.ape_cli} | "
+                        f"ID: {cliente.id_cliente} | "
+                        f"Nombre: {cliente.nomb_cli} {cliente.ape_cli} | "
                         f"DNI: {cliente.dni} | "
                         f"Teléfono: {cliente.telefono}"
                     )
@@ -100,8 +100,8 @@ class ClienteDAO:
         
         self.__log.info(
                         f"Cliente actualizado: "
-                        f"ID={cliente_id} | "
-                        f"{c.nomb_cli} {c.ape_cli} | "
+                        f"ID: {cliente_id} | "
+                        f"Nombre: {c.nomb_cli} {c.ape_cli} | "
                         f"DNI: {c.dni} | "
                         f"Teléfono: {c.telefono}"
                     )
@@ -128,8 +128,8 @@ class ClienteDAO:
         
         self.__log.info(
                         f"Cliente eliminado: "
-                        f"ID={cliente_id} | "
-                        f"{c.nomb_cli} {c.ape_cli} | "
+                        f"ID: {cliente_id} | "
+                        f"Nombre: {c.nomb_cli} {c.ape_cli} | "
                         f"DNI: {c.dni} | "
                         f"Teléfono: {c.telefono}"
                     )
